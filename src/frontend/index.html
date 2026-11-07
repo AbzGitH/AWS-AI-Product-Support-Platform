@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Fitness equipment, mobility essentials and product support.">
+  <title>Fit & Recover | Fitness & Recovery Store</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/app.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <nav aria-label="Main navigation">
+      <a class="brand" href="#home">Fit & Recover</a>
+      <a href="#products">Products</a>
+      <a href="#support">Support</a>
+    </nav>
+  </header>
+
+  <main id="home">
+    <section class="hero">
+      <p>Your fitness and recovery essentials</p>
+      <h1>Train smarter. Move better. Recover stronger.</h1>
+      <p>Explore practical training and recovery equipment, with product support when you need it.</p>
+      <a class="button" href="#products">Explore Products</a>
+    </section>
+
+    <section id="products" class="products">
+      <h2>Featured Fitness & Recovery Products</h2>
+      <div class="product-grid">
+        <article class="product-card">
+          <img src="images/home-workout.jpg" alt="Dumbbells and exercise mat for home workouts" width="1200" height="800" loading="lazy">
+<h3>Home Workout Starter Kit</h3>
+          <p>Essential equipment for strength training and home workouts.</p>
+          <p><strong>£59.99</strong></p>
+        </article>
+
+        <article class="product-card">
+          <img src="images/yoga-mobility.jpg" alt="Yoga mat and blocks for mobility exercises" width="1200" height="800" loading="lazy">
+<h3>Yoga & Mobility Kit</h3>
+          <p>Equipment designed to support stretching, balance and mobility exercises.</p>
+          <p><strong>£44.99</strong></p>
+        </article>
+
+        <article class="product-card">
+          <img src="images/training-recovery.jpg" alt="Foam roller for post-workout recovery" width="1200" height="800" loading="lazy">
+<h3>Training & Recovery Bundle</h3>
+          <p>Training and recovery accessories for everyday fitness routines.</p>
+          <p><strong>£79.99</strong></p>
+        </article>
+      </div>
+    </section>
+
+    <section id="support" class="support">
+      <h2>Fitness Product Support Assistant</h2>
+      <p>Need help choosing, using or caring for your equipment? Ask a product question below.</p>
+
+      <form id="support-form">
+        <label for="product">Choose a product</label>
+        <select id="product" name="product" required>
+          <option value="">Select a product</option>
+          <option value="home-workout-kit">Home Workout Starter Kit</option>
+          <option value="yoga-mobility-kit">Yoga & Mobility Kit</option>
+          <option value="training-recovery-bundle">Training & Recovery Bundle</option>
+        </select>
+
+        <label for="question">Your question</label>
+        <textarea id="question" name="question" rows="4"
+          placeholder="How do I use the equipment in my workout kit?"
+          required></textarea>
+
+        <button type="submit">Ask Support</button>
+      </form>
+
+      <div id="support-response" role="status" aria-live="polite">
+        <p>AI-assisted product support will be available after AWS backend integration.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; Fit & Recover. Demonstration fitness and recovery store.</p>
+  </footer>
+</body>
+</html>
