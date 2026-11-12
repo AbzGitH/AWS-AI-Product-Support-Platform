@@ -32,3 +32,18 @@ resource "aws_iam_role_policy" "support_lambda_dynamodb" {
     }]
   })
 }
+
+# Permit the support Lambda to invoke only Amazon Nova Lite in London.
+resource "aws_iam_role_policy" "support_lambda_bedrock" {
+  name = "support-bedrock-access"
+  role = aws_iam_role.support_lambda.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["bedrock:InvokeModel"]
+      Resource = "arn:aws:bedrock:eu-west-2::foundation-model/amazon.nova-lite-v1:0"
+    }]
+  })
+}

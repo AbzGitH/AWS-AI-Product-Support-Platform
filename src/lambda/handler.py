@@ -1,6 +1,7 @@
 """AWS Lambda handler for Fit & Recover product support."""
 
 import json
+from bedrock_support import generate_product_response
 import os
 from uuid import uuid4
 from datetime import datetime, timezone
@@ -66,13 +67,18 @@ def lambda_handler(event, context):
             "body": json.dumps({"error": "Unable to save request"}),
         }
 
-    # AI-generated responses will be added in Lesson 6.
+    # Generate an AI response after successfully saving the enquiry.
+    try:
+        ai_answer = generate_product_response(question.strip())
+    except Exception:
+        ai_answer = "Your enquiry was saved, but AI support is temporarily unavailable."
+
     return {
         "statusCode": 200,
         "headers": {"Content-Type": "application/json"},
         "body": json.dumps({
             "status": "received",
             "requestId": request_id,
-            "message": "Your product support request has been saved.",
+            "message": ai_answer,
         }),
     }
