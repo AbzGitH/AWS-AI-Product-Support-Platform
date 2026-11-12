@@ -11,3 +11,6 @@ crash.*.log
 
 __pycache__/
 build/
+
+# Local backup files
+*.bak
