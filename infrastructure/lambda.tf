@@ -9,7 +9,7 @@ resource "aws_lambda_function" "support_api" {
   filename         = "${path.module}/../build/support-lambda.zip"
   source_code_hash = filebase64sha256("${path.module}/../build/support-lambda.zip")
 
-  timeout     = 10
+  timeout     = 30
   memory_size = 128
 
   # Tell Lambda which DynamoDB table stores customer enquiries.

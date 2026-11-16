@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 import boto3
+from botocore.config import Config
 
 MODEL_ID = "amazon.nova-lite-v1:0"
 REGION = "eu-west-2"
@@ -28,7 +29,15 @@ def generate_product_response(question):
         "Keep answers concise, clear and professional."
     )
 
-    client = boto3.client("bedrock-runtime", region_name=REGION)
+    client = boto3.client(
+        "bedrock-runtime",
+        region_name=REGION,
+        config=Config(
+            connect_timeout=3,
+            read_timeout=15,
+            retries={"total_max_attempts": 1},
+        ),
+    )
     response = client.converse(
         modelId=MODEL_ID,
         system=[{"text": instructions}],
