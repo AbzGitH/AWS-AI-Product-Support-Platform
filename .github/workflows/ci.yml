@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   validate:
@@ -16,6 +17,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -30,3 +33,39 @@ jobs:
 
       - name: Build Docker image
         run: docker build -t catalogue-api:ci src/catalogue
+
+      - name: Detect publishable changes
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        id: changes
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [[ "$BEFORE" =~ ^0+$ ]]; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          elif git diff --name-only "$BEFORE" "$GITHUB_SHA" |
+            grep -Eq '^(src/catalogue/|\.github/workflows/ci\.yml$)'; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Configure AWS credentials
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.changes.outputs.publish == 'true'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::560396669076:role/GitHubAPSPECRRole
+          aws-region: eu-west-2
+
+      - name: Login to Amazon ECR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.changes.outputs.publish == 'true'
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Publish Docker image to ECR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.changes.outputs.publish == 'true'
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker tag catalogue-api:ci "$REGISTRY/fit-recover-catalogue:$IMAGE_TAG"
+          docker push "$REGISTRY/fit-recover-catalogue:$IMAGE_TAG"
