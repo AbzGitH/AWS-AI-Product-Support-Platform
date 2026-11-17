@@ -49,6 +49,7 @@ jobs:
             echo "publish=false" >> "$GITHUB_OUTPUT"
           fi
 
+      # Uses the approved IAM role with GitHub's immutable OIDC identity.
       - name: Configure AWS credentials
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.changes.outputs.publish == 'true'
         uses: aws-actions/configure-aws-credentials@v4
