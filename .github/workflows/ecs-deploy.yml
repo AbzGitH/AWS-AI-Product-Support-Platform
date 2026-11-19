@@ -1,0 +1,92 @@
+name: Controlled ECS Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Full 40-character Git commit SHA
+        required: true
+        type: string
+      confirmation:
+        description: Type DEPLOY-STOPPED
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: apsp-ecs-deployment
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    environment: ecs-deployment
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate release approval
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          [[ "$CONFIRMATION" == "DEPLOY-STOPPED" ]]
+          [[ "$IMAGE_TAG" =~ ^[0-9a-f]{40}$ ]]
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::560396669076:role/GitHubAPSPECSDeployRole
+          aws-region: eu-west-2
+
+      - name: Prepare stopped-service deployment
+        env:
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          CLUSTER="ai-product-support-dev"
+          SERVICE="fit-recover-catalogue"
+          REPO="fit-recover-catalogue"
+          REGISTRY="560396669076.dkr.ecr.eu-west-2.amazonaws.com"
+
+          aws ecr describe-images             --repository-name "$REPO"             --image-ids "imageTag=$IMAGE_TAG" >/dev/null
+
+          aws ecs describe-services             --cluster "$CLUSTER"             --services "$SERVICE"             --query 'services[0].[desiredCount,runningCount,pendingCount]'             --output text > /tmp/ecs-counts
+
+          read -r DESIRED RUNNING PENDING < /tmp/ecs-counts
+          [[ "$DESIRED" == 0 && "$RUNNING" == 0 && "$PENDING" == 0 ]]
+
+          aws ecs describe-task-definition             --task-definition "$REPO"             --query taskDefinition             --output json > /tmp/current-task.json
+
+          python3 - <<'PYTHON'
+          import json, os
+          task = json.load(open("/tmp/current-task.json"))
+          allowed = {
+              "family", "taskRoleArn", "executionRoleArn",
+              "networkMode", "containerDefinitions", "volumes",
+              "placementConstraints", "requiresCompatibilities",
+              "cpu", "memory", "tags", "pidMode", "ipcMode",
+              "proxyConfiguration", "inferenceAccelerators",
+              "ephemeralStorage", "runtimePlatform"
+          }
+          task = {k: v for k, v in task.items() if k in allowed}
+          assert task["family"] == "fit-recover-catalogue"
+          assert len(task["containerDefinitions"]) == 1
+          task["runtimePlatform"]["cpuArchitecture"] = "X86_64"
+          task["containerDefinitions"][0]["image"] = (
+              "560396669076.dkr.ecr.eu-west-2.amazonaws.com/"
+              "fit-recover-catalogue:" + os.environ["IMAGE_TAG"]
+          )
+          json.dump(task, open("/tmp/new-task.json", "w"))
+          PYTHON
+
+          TASK_ARN=$(aws ecs register-task-definition             --cli-input-json file:///tmp/new-task.json             --query 'taskDefinition.taskDefinitionArn'             --output text)
+
+          printf "%s" "$TASK_ARN" > /tmp/registered-task-arn
+          aws ecs update-service             --cluster "$CLUSTER"             --service "$SERVICE"             --task-definition "$TASK_ARN"             --desired-count 0 >/dev/null
+
+          aws ecs describe-services --cluster "$CLUSTER" --services "$SERVICE" --query "services[0].[desiredCount,runningCount,pendingCount,taskDefinition]" --output json > /tmp/final-service.json
+          python3 -c 'import json,pathlib; d,r,p,t=json.loads(pathlib.Path("/tmp/final-service.json").read_text()); expected=pathlib.Path("/tmp/registered-task-arn").read_text().strip(); assert (d,r,p)==(0,0,0) and t==expected, "BLOCKED: ECS verification failed"; print("PASS: ECS stopped and task definition verified")'

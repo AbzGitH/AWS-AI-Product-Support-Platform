@@ -12,10 +12,10 @@ resource "aws_ecs_task_definition" "catalogue" {
   memory                   = "512"
   execution_role_arn       = data.aws_iam_role.ecs_execution.arn
 
-  # Match the ARM64 image built on Apple Silicon.
+  # Match the AMD64 image built by GitHub Actions.
   runtime_platform {
     operating_system_family = "LINUX"
-    cpu_architecture        = "ARM64"
+    cpu_architecture        = "X86_64"
   }
 
   # Describe the application and its CloudWatch logging.

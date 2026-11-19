@@ -8,6 +8,11 @@ resource "aws_ecs_service" "catalogue" {
   # Keep compute stopped until deployment testing is approved.
   desired_count = 0
 
+  # GitHub Actions manages application task-definition releases.
+  lifecycle {
+    ignore_changes = [task_definition]
+  }
+
   # Allow one task to run with a public IP when activated.
   # The dedicated security group currently blocks all inbound traffic.
   network_configuration {

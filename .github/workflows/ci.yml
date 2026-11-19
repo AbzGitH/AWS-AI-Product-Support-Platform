@@ -32,7 +32,7 @@ jobs:
         run: python -m compileall -q src/catalogue
 
       - name: Build Docker image
-        run: docker build -t catalogue-api:ci src/catalogue
+        run: docker build --platform linux/amd64 -t catalogue-api:ci src/catalogue
 
       - name: Detect publishable changes
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
