@@ -14,3 +14,8 @@ build/
 
 # Local backup files
 *.bak
+
+# Local environment configuration — never commit credentials
+.env
+.env.*
+!.env.example
